@@ -18,10 +18,11 @@
         $map.attr('id', 'map');
         $map.appendTo( $el );
 
+				/*
         var $title = jQuery( document.createElement( 'div' ) );
         $title.html( '<h1>A Simple Choropleth</h1>' );
         $title.appendTo( $el );
-
+				*/
       }
 
       function drawMap(){
@@ -38,8 +39,28 @@
         var hyb = new L.TileLayer(hybUrl, {minZoom: 1, maxZoom: 18, attribution: hybAttrib, opacity:1}).addTo(map);
 
 
-				var gjLayerCountries = L.geoJson( geoCountries, { style: styleCountry, onEachFeature: onEachCountry } );
+				var gjLayerCountries = L.geoJson( geoCountries, { style: styleCountry, onEachFeature: onEachCountry, filter: matchCountries } );
         gjLayerCountries.addTo(map);
+
+				console.log( data );
+
+				//ONLY ADD DISTRICTS THAT ARE AVAILABLE IN THE DATA
+				function matchCountries( feature ) {
+					if( data[ feature.properties.SOVEREIGNT ] ) return true;
+					return false;
+				}
+
+				//ADD COUNTRY BOUNDARIES
+				var gjLayerCountryLines = L.geoJson( geoCountries, { style: {
+					"color"		: "#000",
+					"weight"	: 1,
+					"opacity"	: 1,
+					"fill"		: false
+				} } );
+				gjLayerCountryLines.addTo(map);
+
+				map.setMaxBounds( gjLayerCountryLines.getBounds() );
+
 
       }
 
@@ -70,21 +91,17 @@
 
         layer.bindTooltip( feature.properties.SOVEREIGNT, {
           direction : 'auto',
-          className : 'statelabel',
+          className : 'countrylabel',
           permanent : false,
           sticky    : true
         } );
 
-        //layer.bindPopup(popContent(feature), {maxWidth:600});
+        layer.bindPopup( popContent( feature ), { maxWidth:600 } );
       }
 
 			function popContent( feature ) {
-        //FOR DISTRICT POP UPS ON CLICK
-        for ( var i = 0; i<data.length; i++ ){
-          if ( data[i]["Country"] == feature.properties.SOVEREIGNT ) {
-            return 'Hello';
-          }
-        }
+				var content = data[ feature.properties.SOVEREIGNT ] ['popup'];
+				return content;
       }
 
       function highlightFeature(e) {
